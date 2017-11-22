@@ -25,7 +25,7 @@ class EBSAuditor(BaseAuditor):
         ConfigOption('interval', 1440, 'int', 'How often the auditor runs, in minutes'),
         ConfigOption('renotify_delay_days', 14, 'int', 'Send another notifications n days after the last'),
         ConfigOption('email_subject', 'Unattached EBS Volumes', 'string', 'Subject of the notification emails'),
-        ConfigOption('ignore_tags', ['cloud_inquisitor:ignore'], 'array',
+        ConfigOption('ignore_tags', ['cinq:ignore'], 'array',
                      'A list of tags that will cause the auditor to ignore the volume')
     )
 
