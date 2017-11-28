@@ -47,7 +47,7 @@ setuptools.setup(
         'Intended Audience :: Information Technology',
 
         # License information
-        'License :: OSI Approved :: Apache 2.0',
+        'License :: OSI Approved :: Apache Software License',
 
         # Supported python versions
         'Programming Language :: Python :: 3.5',
