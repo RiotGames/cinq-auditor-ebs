@@ -48,8 +48,6 @@ class EBSAuditor(BaseAuditor):
 
         notices = {}
         for account, issues in data.items():
-            account.contacts.append('#akjaer-slack-test')
-
             for issue in issues['issues']:
                 for recipient in account.contacts:
                     notices.setdefault(recipient, {'issues': [], 'fixed': []})['issues'].append(issue)
