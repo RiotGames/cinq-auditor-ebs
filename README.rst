@@ -23,5 +23,5 @@ Configuration Options
 +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------+
 | email_subject          | Unattached EBS Volumes  | string | JSON document with roles to push to accounts. See documentation for examples               |
 +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------+
-| ignore_tags            | cinq_ignore             | array | A list of tags that will cause the auditor to ignore the volume                             |
+| ignore_tags            | cinq_ignore             | array  | A list of tags that will cause the auditor to ignore the volume                            |
 +------------------------+-------------------------+-----------------------------------------------------------------------------------------------------+
