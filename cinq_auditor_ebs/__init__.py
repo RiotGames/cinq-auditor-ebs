@@ -2,9 +2,9 @@ import urllib.parse
 import uuid
 from datetime import datetime
 
-from cloud_inquisitor import db
 from cloud_inquisitor.config import dbconfig, ConfigOption
 from cloud_inquisitor.constants import NS_AUDITOR_EBS, EBSIssueState, NS_EMAIL
+from cloud_inquisitor.database import db
 from cloud_inquisitor.exceptions import SlackError
 from cloud_inquisitor.plugins import BaseAuditor
 from cloud_inquisitor.plugins.notifiers.email import send_email
