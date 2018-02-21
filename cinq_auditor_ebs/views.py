@@ -1,7 +1,7 @@
-from cloud_inquisitor import Account
 from cloud_inquisitor.constants import ROLE_USER
 from cloud_inquisitor.plugins import BaseView
 from cloud_inquisitor.plugins.types.issues import EBSVolumeAuditIssue
+from cloud_inquisitor.schema import Account
 from cloud_inquisitor.utils import MenuItem
 from cloud_inquisitor.wrappers import check_auth, rollback
 
