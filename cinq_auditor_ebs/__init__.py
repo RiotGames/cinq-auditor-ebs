@@ -19,7 +19,6 @@ class EBSAuditor(BaseAuditor):
     name = 'EBS Auditor'
     ns = NS_AUDITOR_EBS
     interval = dbconfig.get('interval', ns, 1440)
-    enabled = dbconfig.get('enabled', ns, False)
     options = (
         ConfigOption('enabled', False, 'bool', 'Enable the EBS auditor'),
         ConfigOption('interval', 1440, 'int', 'How often the auditor runs, in minutes'),
