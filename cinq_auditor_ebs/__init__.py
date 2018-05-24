@@ -11,7 +11,7 @@ from cloud_inquisitor.plugins.notifiers.email import send_email
 from cloud_inquisitor.plugins.notifiers.slack import SlackNotifier
 from cloud_inquisitor.plugins.types.issues import EBSVolumeAuditIssue
 from cloud_inquisitor.plugins.types.resources import EBSVolume
-from cloud_inquisitor.utils import get_template, get_resource_id
+from cloud_inquisitor.utils import get_template, get_resource_id, send_notification
 
 
 class EBSAuditor(BaseAuditor):
@@ -48,7 +48,7 @@ class EBSAuditor(BaseAuditor):
         notices = {}
         for account, issues in data.items():
             for issue in issues['issues']:
-                for recipient in account.contacts:
+                for recipient in account.get_contacts():
                     notices.setdefault(recipient, {'issues': [], 'fixed': []})['issues'].append(issue)
 
             for issue in issues['fixed']:
@@ -185,91 +185,18 @@ class EBSAuditor(BaseAuditor):
         Returns:
             `None`
         """
+        issues_html = get_template('unattached_ebs_volume.html')
+        issues_text = get_template('unattached_ebs_volume.txt')
+
         for recipient, data in list(notices.items()):
-            if recipient.startswith('#'):
-                self.notify_slack(recipient, data)
+            if data['issues']:
+                message_html = issues_html.render(issues=data['issues'])
+                message_text = issues_text.render(issues=data['issues'])
 
-            elif recipient.find('@') >= 0:
-                self.notify_email(recipient, data)
-
-    def notify_email(self, recipient, data):
-        """Notify a user via email
-
-        Args:
-            recipient (`str`): Email address
-            data (`dict`): List of issues
-
-        Returns:
-            `None`
-        """
-        if len(data['issues']) > 0:
-            tmpl = get_template('unattached_ebs_volume.html')
-            message_uuid = urllib.parse.quote(str(uuid.uuid4()))
-            body = tmpl.render(
-                issues=data['issues']
-            )
-
-            send_email(
-                self.name,
-                self.dbconfig.get('from_address', NS_EMAIL),
-                recipient,
-                self.subject,
-                html_body=body,
-                message_uuid=message_uuid
-            )
-
-        # TODO: Currently disabled as we do not enforce deletion. When we do implement deletion uncomment this code
-        # TODO: and provide the template requested
-        # if len(data['fixed']) > 0:
-        #     tmpl = get_template('unattached_ebs_volume_fixed.html')
-        #
-        #     message_uuid = urllib.parse.quote(str(uuid.uuid4()))
-        #     body = tmpl.render(
-        #         fixed=data['fixed']
-        #     )
-        #
-        #     send_email(
-        #         self.name,
-        #         self.dbconfig.get('from_address', NS_EMAIL),
-        #         recipient,
-        #         self.subject,
-        #         html_body=body,
-        #         message_uuid=message_uuid
-        #     )
-
-    def notify_slack(self, recipient, data):
-        """Notify a slack channel
-
-                Args:
-                    recipient (`str`): Slack channel name
-                    data (`dict`): List of issues
-
-                Returns:
-                    `None`
-                """
-        try:
-            if len(data['issues']) > 0:
-                text_tmpl = get_template('unattached_ebs_volume.txt')
-                message = text_tmpl.render(
-                    issues=data['issues']
+                send_notification(
+                    subsystem=self.name,
+                    recipients=[recipient],
+                    subject=self.subject,
+                    body_html=message_html,
+                    body_text=message_text
                 )
-
-                SlackNotifier.send_message(
-                    recipient,
-                    message
-                )
-
-            # TODO: Currently disabled as we do not enforce deletion. When we do implement deletion uncomment this code
-            # TODO: and provide the template requested
-            # if len(data['fixed']) > 0:
-            #     text_tmpl = get_template('required_tags_fixed.txt')
-            #     message = text_tmpl.render(
-            #         issues=data['fixed']
-            #     )
-            #
-            #     SlackNotifier.send_slack_message(
-            #         (recipient,),
-            #         message
-            #     )
-        except SlackError as ex:
-            self.log.error('Failed sending message to slack channel {}: {}'.format(recipient, ex))
