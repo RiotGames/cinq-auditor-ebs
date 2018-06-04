@@ -1,14 +1,10 @@
-import urllib.parse
-import uuid
+from collections import defaultdict
 from datetime import datetime
 
 from cloud_inquisitor.config import dbconfig, ConfigOption
-from cloud_inquisitor.constants import NS_AUDITOR_EBS, EBSIssueState, NS_EMAIL
+from cloud_inquisitor.constants import NS_AUDITOR_EBS, EBSIssueState
 from cloud_inquisitor.database import db
-from cloud_inquisitor.exceptions import SlackError
 from cloud_inquisitor.plugins import BaseAuditor
-from cloud_inquisitor.plugins.notifiers.email import send_email
-from cloud_inquisitor.plugins.notifiers.slack import SlackNotifier
 from cloud_inquisitor.plugins.types.issues import EBSVolumeAuditIssue
 from cloud_inquisitor.plugins.types.resources import EBSVolume
 from cloud_inquisitor.utils import get_template, get_resource_id, send_notification
@@ -45,15 +41,11 @@ class EBSAuditor(BaseAuditor):
         self.log.debug('Starting EBSAuditor')
         data = self.update_data()
 
-        notices = {}
+        notices = defaultdict(list)
         for account, issues in data.items():
-            for issue in issues['issues']:
+            for issue in issues:
                 for recipient in account.get_contacts():
-                    notices.setdefault(recipient, {'issues': [], 'fixed': []})['issues'].append(issue)
-
-            for issue in issues['fixed']:
-                for recipient in account.contacts:
-                    notices.setdefault(recipient, {'issues': [], 'fixed': []})['fixed'].append(issue)
+                    notices[recipient].append(issue)
 
         self.notify(notices)
 
@@ -71,12 +63,9 @@ class EBSAuditor(BaseAuditor):
         fixed_issues = self.process_fixed_issues(volumes, existing_issues)
 
         # region Process the data to be returned
-        output = {}
-        for acct, data in list(new_issues.items()):
-            output.setdefault(acct, {'issues': [], 'fixed': []})['issues'] += data
-
-        for acct, data in list(fixed_issues.items()):
-            output.setdefault(acct, {'issues': [], 'fixed': []})['fixed'] += data
+        output = defaultdict(list)
+        for acct, data in new_issues.items():
+            output[acct] += data
         # endregion
 
         # region Update the database with the changes pending
@@ -84,9 +73,8 @@ class EBSAuditor(BaseAuditor):
             for issue in issues:
                 db.session.add(issue.issue)
 
-        for issues in fixed_issues.values():
-            for issue in issues:
-                db.session.delete(issue.issue)
+        for issue in fixed_issues:
+            db.session.delete(issue.issue)
 
         db.session.commit()
         # endregion
@@ -167,12 +155,12 @@ class EBSAuditor(BaseAuditor):
             the value
 
         Returns:
-            :obj:`dict` of `str`: `EBSVolumeAuditIssue`
+            :obj:`list` of :obj:`EBSVolumeAuditIssue`
         """
-        fixed_issues = {}
+        fixed_issues = []
         for issue_id, issue in list(existing_issues.items()):
             if issue_id not in volumes:
-                fixed_issues.setdefault(issue.volume.account, []).append(issue)
+                fixed_issues.append(issue)
 
         return fixed_issues
 
@@ -188,10 +176,10 @@ class EBSAuditor(BaseAuditor):
         issues_html = get_template('unattached_ebs_volume.html')
         issues_text = get_template('unattached_ebs_volume.txt')
 
-        for recipient, data in list(notices.items()):
-            if data['issues']:
-                message_html = issues_html.render(issues=data['issues'])
-                message_text = issues_text.render(issues=data['issues'])
+        for recipient, issues in list(notices.items()):
+            if issues:
+                message_html = issues_html.render(issues=issues)
+                message_text = issues_text.render(issues=issues)
 
                 send_notification(
                     subsystem=self.name,
