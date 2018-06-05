@@ -2,6 +2,8 @@
 cinq-auditor-ebs
 ****************
 
+Please open issues in the `Cloud-Inquisitor <https://github.com/RiotGames/cloud-inquisitor/issues/new?labels=cinq-auditor-ebs>`_ repository
+
 ===========
 Description
 ===========
