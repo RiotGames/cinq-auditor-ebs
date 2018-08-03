@@ -7,7 +7,7 @@ from cloud_inquisitor.database import db
 from cloud_inquisitor.plugins import BaseAuditor
 from cloud_inquisitor.plugins.types.issues import EBSVolumeAuditIssue
 from cloud_inquisitor.plugins.types.resources import EBSVolume
-from cloud_inquisitor.utils import get_template, get_resource_id, send_notification
+from cloud_inquisitor.utils import get_template, get_resource_id, send_notification, NotificationContact
 
 
 class EBSAuditor(BaseAuditor):
@@ -44,8 +44,8 @@ class EBSAuditor(BaseAuditor):
         notices = defaultdict(list)
         for account, issues in data.items():
             for issue in issues:
-                for recipient in account.get_contacts():
-                    notices[recipient].append(issue)
+                for recipient in account.contacts:
+                    notices[NotificationContact(type=recipient['type'], value=recipient['value'])].append(issue)
 
         self.notify(notices)
 
